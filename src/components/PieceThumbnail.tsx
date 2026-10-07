@@ -10,6 +10,7 @@ interface PieceThumbnailProps {
   boardWidth: number;
   boardHeight: number;
   isSelected?: boolean;
+  sizePx?: number;
   onPointerDown: (e: React.PointerEvent<HTMLDivElement>, piece: JigsawPieceData) => void;
 }
 
@@ -21,6 +22,7 @@ export const PieceThumbnail: React.FC<PieceThumbnailProps> = ({
   boardWidth,
   boardHeight,
   isSelected,
+  sizePx = 76,
   onPointerDown,
 }) => {
   const bbox = getPieceBoundingBox(piece, cellWidth, cellHeight, boardWidth, boardHeight);
@@ -42,8 +44,8 @@ export const PieceThumbnail: React.FC<PieceThumbnailProps> = ({
         isSelected ? 'opacity-30 scale-95' : 'hover:scale-105 active:scale-95'
       }`}
       style={{
-        width: '76px',
-        height: '76px',
+        width: `${sizePx}px`,
+        height: `${sizePx}px`,
       }}
     >
       {/* Background card with tactile drop shadow */}

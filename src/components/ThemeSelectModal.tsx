@@ -1,6 +1,6 @@
 import React from 'react';
 import { X, Check, Landmark, Mountain, Palette, Moon, Star, Sparkles } from 'lucide-react';
-import { AVAILABLE_THEMES } from '../data/themes';
+import { AVAILABLE_THEMES, getPuzzleImageUrl } from '../data/themes';
 import { GameSaveState, ThemeId } from '../types/game';
 
 interface ThemeSelectModalProps {
@@ -84,7 +84,7 @@ export const ThemeSelectModal: React.FC<ThemeSelectModalProps> = ({
                 {/* Theme Cover Thumbnail */}
                 <div className="relative w-20 h-20 rounded-xl overflow-hidden bg-slate-950 flex-shrink-0 shadow-sm border border-black/10">
                   <img
-                    src={theme.coverImage}
+                    src={getPuzzleImageUrl(theme.coverImage)}
                     alt={theme.name}
                     referrerPolicy="no-referrer"
                     className="w-full h-full object-cover"

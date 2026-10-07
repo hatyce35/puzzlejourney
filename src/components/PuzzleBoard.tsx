@@ -11,6 +11,7 @@ interface PuzzleBoardProps {
   isCompleted: boolean;
   boardRef: React.RefObject<HTMLDivElement | null>;
   recentSnapCoord: { x: number; y: number } | null;
+  sizePx?: number;
 }
 
 export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
@@ -23,23 +24,30 @@ export const PuzzleBoard: React.FC<PuzzleBoardProps> = ({
   isCompleted,
   boardRef,
   recentSnapCoord,
+  sizePx,
 }) => {
   const activeSnapPiece = activeSnapPieceId !== null ? pieces.find(p => p.id === activeSnapPieceId) : null;
 
   return (
-    <div className="w-full flex items-center justify-center select-none px-2">
+    <div className="w-full h-full flex items-center justify-center select-none p-1 sm:p-2">
       {/* Outer tactile frame representing wooden puzzle board mat */}
       <div
-        ref={boardRef}
-        className={`relative w-full max-w-[380px] sm:max-w-[420px] aspect-square rounded-3xl p-2.5 sm:p-3 bg-gradient-to-b from-amber-950/80 via-amber-900/70 to-stone-900 shadow-2xl border-4 border-amber-800/60 transition-transform duration-500 ${
-          isCompleted ? 'scale-[1.03] shadow-amber-500/20 shadow-2xl' : ''
+        className={`relative aspect-square rounded-2xl sm:rounded-3xl p-2 sm:p-3 bg-gradient-to-b from-amber-950/85 via-amber-900/75 to-stone-900 shadow-2xl border-2 sm:border-4 border-amber-800/60 transition-transform duration-500 ${
+          isCompleted ? 'scale-[1.02] shadow-amber-500/25' : ''
         }`}
         style={{
+          width: sizePx ? `${sizePx}px` : '100%',
+          height: sizePx ? `${sizePx}px` : '100%',
+          maxWidth: '100%',
+          maxHeight: '100%',
           boxShadow: '0 20px 35px -10px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.15)',
         }}
       >
-        {/* Inner Puzzle Canvas Surface */}
-        <div className="relative w-full h-full rounded-2xl overflow-hidden bg-slate-900 shadow-inner">
+        {/* Inner Puzzle Canvas Surface - boardRef attached here for 1:1 mathematical accuracy */}
+        <div
+          ref={boardRef}
+          className="relative w-full h-full rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900 shadow-inner"
+        >
           <svg
             viewBox="0 0 600 600"
             className="w-full h-full block"

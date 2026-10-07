@@ -13,6 +13,7 @@ interface DragOverlayProps {
   boardHeight: number;
   isNearSnap: boolean;
   returnPos?: { x: number; y: number } | null;
+  isTouch?: boolean;
 }
 
 export const DragOverlay: React.FC<DragOverlayProps> = ({
@@ -26,6 +27,7 @@ export const DragOverlay: React.FC<DragOverlayProps> = ({
   boardHeight,
   isNearSnap,
   returnPos,
+  isTouch = false,
 }) => {
   const bbox = getPieceBoundingBox(piece, cellWidth, cellHeight, boardWidth, boardHeight);
 
@@ -38,8 +40,9 @@ export const DragOverlay: React.FC<DragOverlayProps> = ({
   const cellCenterOffsetX = (piece.col * cellWidth + cellWidth / 2 - bbox.minX) * scale;
   const cellCenterOffsetY = (piece.row * cellHeight + cellHeight / 2 - bbox.minY) * scale;
 
+  const thumbClearance = isTouch ? 26 : 0;
   const currentX = (returnPos ? returnPos.x : pos.x) - cellCenterOffsetX;
-  const currentY = (returnPos ? returnPos.y : pos.y) - cellCenterOffsetY - 24; // 24px thumb clearance
+  const currentY = (returnPos ? returnPos.y : pos.y) - cellCenterOffsetY - thumbClearance;
 
   return (
     <div

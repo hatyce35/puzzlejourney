@@ -1,5 +1,5 @@
 import React from 'react';
-import { Eye, Pause, Volume2, VolumeX, ArrowLeft, Star } from 'lucide-react';
+import { Eye, Pause, Volume2, VolumeX, ArrowLeft, Star, Maximize2, Minimize2 } from 'lucide-react';
 import { LevelDefinition } from '../types/game';
 
 interface GameHeaderProps {
@@ -8,10 +8,12 @@ interface GameHeaderProps {
   hasUsedPreview: boolean;
   isPreviewActive: boolean;
   soundEnabled: boolean;
+  isFullscreen?: boolean;
   onPreviewClick: () => void;
   onPauseClick: () => void;
   onSoundToggle: () => void;
   onBackToLevels: () => void;
+  onToggleFullscreen?: () => void;
 }
 
 export const GameHeader: React.FC<GameHeaderProps> = ({
@@ -20,16 +22,18 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
   hasUsedPreview,
   isPreviewActive,
   soundEnabled,
+  isFullscreen = false,
   onPreviewClick,
   onPauseClick,
   onSoundToggle,
   onBackToLevels,
+  onToggleFullscreen,
 }) => {
   const levelNumberStr = level.id < 10 ? `0${level.id}` : `${level.id}`;
 
   return (
-    <header className="w-full flex flex-col gap-2 select-none pt-1">
-      {/* Row 1: Back, Title, Level Number, Sound, Pause */}
+    <header className="w-full flex flex-col gap-1.5 select-none pt-0.5">
+      {/* Row 1: Back, Title, Level Number, Sound, Fullscreen, Pause */}
       <div className="flex items-center justify-between px-1">
         <button
           type="button"
@@ -41,25 +45,40 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
           <span className="hidden sm:inline">Bölümler</span>
         </button>
 
-        <div className="text-center">
-          <h1 className="text-xs uppercase tracking-widest font-black text-amber-600 dark:text-amber-400">
+        <div className="text-center px-1">
+          <h1 className="text-[10px] sm:text-xs uppercase tracking-widest font-black text-amber-600 dark:text-amber-400">
             DÜNYA MİRASLARI
           </h1>
-          <div className="text-base font-bold text-slate-800 dark:text-slate-100 flex items-center justify-center gap-1.5">
+          <div className="text-sm sm:text-base font-bold text-slate-800 dark:text-slate-100 flex items-center justify-center gap-1.5">
             <span>BÖLÜM {levelNumberStr}</span>
             <span className="text-slate-400 font-normal">·</span>
-            <span className="text-xs font-semibold text-slate-500 dark:text-slate-300">
+            <span className="text-xs font-semibold text-slate-500 dark:text-slate-300 truncate max-w-[120px] sm:max-w-[200px]">
               {level.title}
             </span>
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-1 sm:gap-1.5">
+          {onToggleFullscreen && (
+            <button
+              type="button"
+              onClick={onToggleFullscreen}
+              className={`p-2 rounded-xl transition-colors active:scale-95 ${
+                isFullscreen
+                  ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-300/60'
+                  : 'bg-slate-200/80 hover:bg-slate-300/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
+              }`}
+              title={isFullscreen ? 'Tam Ekrandan Çık (Esc)' : 'Tam Ekran Yap (F)'}
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+          )}
+
           <button
             type="button"
             onClick={onSoundToggle}
             className="p-2 rounded-xl bg-slate-200/80 hover:bg-slate-300/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors active:scale-95"
-            title={soundEnabled ? 'Sesi kapat' : 'Sesi aç'}
+            title={soundEnabled ? 'Sesi kapat (M)' : 'Sesi aç (M)'}
           >
             {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
           </button>
@@ -67,7 +86,7 @@ export const GameHeader: React.FC<GameHeaderProps> = ({
             type="button"
             onClick={onPauseClick}
             className="p-2 rounded-xl bg-slate-200/80 hover:bg-slate-300/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors active:scale-95"
-            title="Oyunu duraklat"
+            title="Oyunu duraklat (P)"
           >
             <Pause className="w-4 h-4" />
           </button>

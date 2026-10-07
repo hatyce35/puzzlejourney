@@ -10,6 +10,8 @@ import {
   setSoundSetting,
   setCurrentTheme,
 } from './utils/storage';
+import { useFullscreen } from './utils/useFullscreen';
+import { useResponsiveLayout } from './utils/useResponsiveLayout';
 import { MainMenu } from './components/MainMenu';
 import { LevelSelect } from './components/LevelSelect';
 import { ThemeSelectModal } from './components/ThemeSelectModal';
@@ -25,6 +27,9 @@ export default function App() {
   const [currentTheme, setCurrentThemeState] = useState<ThemeId>(() => saveState.currentTheme || 'cities');
   const [showThemeModal, setShowThemeModal] = useState<boolean>(false);
   const [screen, setScreen] = useState<ScreenState>('MAIN_MENU');
+
+  const { isFullscreen, toggleFullscreen } = useFullscreen();
+  const { useSideTray, boardSizePx, thumbSizePx } = useResponsiveLayout();
 
   const activeLevels = THEME_LEVELS[currentTheme] || THEME_LEVELS.cities;
   const themeData = saveState.themeProgress[currentTheme] || { unlockedLevel: 1, progress: {} };
@@ -46,6 +51,7 @@ export default function App() {
   const [isNearSnap, setIsNearSnap] = useState<boolean>(false);
   const [returnPos, setReturnPos] = useState<{ x: number; y: number } | null>(null);
   const [dragStartPos, setDragStartPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const isTouchRef = useRef<boolean>(false);
 
   // Preview & Completion
   const [hasUsedPreview, setHasUsedPreview] = useState<boolean>(false);
@@ -142,6 +148,8 @@ export default function App() {
       e.preventDefault();
       sound.playPickup();
 
+      isTouchRef.current = e.pointerType === 'touch' || e.pointerType === 'pen';
+
       const rect = e.currentTarget.getBoundingClientRect();
       const currentPos = { x: e.clientX, y: e.clientY };
 
@@ -154,7 +162,7 @@ export default function App() {
     []
   );
 
-  // Global Pointer Events for Smooth Dragging & Snapping
+  // Global Pointer Events for Smooth Dragging & Snapping across devices
   useEffect(() => {
     if (!draggingPiece) return;
 
@@ -165,7 +173,7 @@ export default function App() {
       const boardRect = boardRef.current.getBoundingClientRect();
 
       const scale = 600 / boardRect.width;
-      const thumbClearance = 24;
+      const thumbClearance = isTouchRef.current ? 26 : 0;
       const curCenterX = (e.clientX - boardRect.left) * scale;
       const curCenterY = (e.clientY - boardRect.top - thumbClearance) * scale;
 
@@ -186,7 +194,7 @@ export default function App() {
 
       const boardRect = boardRef.current.getBoundingClientRect();
       const scale = 600 / boardRect.width;
-      const thumbClearance = 24;
+      const thumbClearance = isTouchRef.current ? 26 : 0;
       const curCenterX = (e.clientX - boardRect.left) * scale;
       const curCenterY = (e.clientY - boardRect.top - thumbClearance) * scale;
 
@@ -265,10 +273,42 @@ export default function App() {
     };
   }, [draggingPiece, jigsaw, dragStartPos, hasUsedPreview, currentLevel.id, currentTheme]);
 
+  // Global Keyboard Shortcuts (F = Fullscreen, Space = Preview, P = Pause, M = Sound, S = Shuffle)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+
+      if (e.key === 'f' || e.key === 'F') {
+        e.preventDefault();
+        toggleFullscreen();
+      } else if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        handleSoundToggle();
+      } else if (screen === 'PLAYING') {
+        if (e.code === 'Space') {
+          e.preventDefault();
+          handlePreviewClick();
+        } else if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') {
+          e.preventDefault();
+          setScreen('PAUSED');
+        } else if (e.key === 's' || e.key === 'S') {
+          e.preventDefault();
+          handleShuffleTray();
+        }
+      } else if (screen === 'PAUSED' && (e.key === 'p' || e.key === 'P' || e.key === 'Escape')) {
+        e.preventDefault();
+        setScreen('PLAYING');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [screen, toggleFullscreen, handleSoundToggle, handlePreviewClick, handleShuffleTray]);
+
   // Level Complete Actions
   const handleNextLevel = () => {
     setShowVictoryModal(false);
-    const nextIdx = currentLevel.id; // next level is activeLevels[currentLevel.id]
+    const nextIdx = currentLevel.id;
     if (nextIdx < activeLevels.length) {
       startLevel(activeLevels[nextIdx]);
     } else {
@@ -297,17 +337,19 @@ export default function App() {
   };
 
   return (
-    <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans">
+    <div className="flex flex-col h-[100dvh] w-screen overflow-hidden bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 font-sans">
       {/* 1. MAIN MENU SCREEN */}
       {screen === 'MAIN_MENU' && (
         <MainMenu
           saveState={saveState}
           currentTheme={currentTheme}
           levels={activeLevels}
+          isFullscreen={isFullscreen}
           onPlayCurrentLevel={handlePlayCurrentLevel}
           onOpenLevelSelect={() => setScreen('LEVEL_SELECT')}
           onOpenThemeSelect={() => setShowThemeModal(true)}
           onSoundToggle={handleSoundToggle}
+          onToggleFullscreen={toggleFullscreen}
         />
       )}
 
@@ -317,100 +359,205 @@ export default function App() {
           saveState={saveState}
           currentTheme={currentTheme}
           levels={activeLevels}
+          isFullscreen={isFullscreen}
           onSelectLevel={startLevel}
           onBackToMenu={handleBackToMenu}
           onOpenThemeSelect={() => setShowThemeModal(true)}
           onSoundToggle={handleSoundToggle}
+          onToggleFullscreen={toggleFullscreen}
         />
       )}
 
       {/* 3. PLAYING & PAUSED SCREENS */}
       {(screen === 'PLAYING' || screen === 'PAUSED') && (
-        <div className="flex flex-col h-full w-full max-w-lg mx-auto px-2 py-1 justify-between select-none">
-          {/* Game Header */}
-          <GameHeader
-            level={currentLevel}
-            starsPotential={hasUsedPreview ? 2 : 3}
-            hasUsedPreview={hasUsedPreview}
-            isPreviewActive={isPreviewActive}
-            soundEnabled={saveState.soundEnabled}
-            onPreviewClick={handlePreviewClick}
-            onPauseClick={() => setScreen('PAUSED')}
-            onSoundToggle={handleSoundToggle}
-            onBackToLevels={handleBackToLevels}
-          />
-
-          {/* Puzzle Board in Center */}
-          <main className="my-auto py-2 flex items-center justify-center">
-            <PuzzleBoard
+        useSideTray ? (
+          /* Landscape / Desktop / Tablet Wide Mode (Side-by-Side) */
+          <div className="flex flex-col h-[100dvh] w-full max-w-7xl mx-auto px-3 sm:px-6 py-1 select-none overflow-hidden">
+            {/* Game Header */}
+            <GameHeader
               level={currentLevel}
-              pieces={jigsaw.pieces}
-              fullPathGrid={jigsaw.fullPathGrid}
-              lockedPieceIds={lockedPieceIds}
-              activeSnapPieceId={isNearSnap && draggingPiece ? draggingPiece.id : null}
+              starsPotential={hasUsedPreview ? 2 : 3}
+              hasUsedPreview={hasUsedPreview}
               isPreviewActive={isPreviewActive}
-              isCompleted={isCompleted}
-              boardRef={boardRef}
-              recentSnapCoord={recentSnapCoord}
-            />
-          </main>
-
-          {/* Available Pieces Tray at Bottom */}
-          <footer className="w-full mt-auto">
-            <PieceTray
-              level={currentLevel}
-              unplacedPieces={unplacedPieces}
-              totalPiecesCount={jigsaw.pieces.length}
-              cellWidth={jigsaw.cellWidth}
-              cellHeight={jigsaw.cellHeight}
-              boardWidth={jigsaw.boardWidth}
-              boardHeight={jigsaw.boardHeight}
-              draggingPieceId={draggingPiece ? draggingPiece.id : null}
-              onPointerDownPiece={handlePointerDownPiece}
-              onShuffleTray={handleShuffleTray}
-            />
-          </footer>
-
-          {/* Floating Drag Overlay */}
-          {draggingPiece && (
-            <DragOverlay
-              level={currentLevel}
-              piece={draggingPiece}
-              pos={dragPos}
-              boardRect={boardRef.current ? boardRef.current.getBoundingClientRect() : null}
-              cellWidth={jigsaw.cellWidth}
-              cellHeight={jigsaw.cellHeight}
-              boardWidth={jigsaw.boardWidth}
-              boardHeight={jigsaw.boardHeight}
-              isNearSnap={isNearSnap}
-              returnPos={returnPos}
-            />
-          )}
-
-          {/* Pause Modal */}
-          {screen === 'PAUSED' && (
-            <PauseModal
-              level={currentLevel}
               soundEnabled={saveState.soundEnabled}
-              onResume={() => setScreen('PLAYING')}
-              onRestart={() => startLevel(currentLevel)}
-              onLevelSelect={handleBackToLevels}
+              isFullscreen={isFullscreen}
+              onPreviewClick={handlePreviewClick}
+              onPauseClick={() => setScreen('PAUSED')}
               onSoundToggle={handleSoundToggle}
+              onBackToLevels={handleBackToLevels}
+              onToggleFullscreen={toggleFullscreen}
             />
-          )}
 
-          {/* Victory Modal */}
-          {showVictoryModal && (
-            <VictoryModal
+            {/* Side-by-side area: Board on Left, Tray on Right */}
+            <div className="flex-1 flex flex-row items-center justify-between gap-4 sm:gap-6 py-2 overflow-hidden min-h-0">
+              <main className="flex-1 flex items-center justify-center h-full min-w-0">
+                <PuzzleBoard
+                  level={currentLevel}
+                  pieces={jigsaw.pieces}
+                  fullPathGrid={jigsaw.fullPathGrid}
+                  lockedPieceIds={lockedPieceIds}
+                  activeSnapPieceId={isNearSnap && draggingPiece ? draggingPiece.id : null}
+                  isPreviewActive={isPreviewActive}
+                  isCompleted={isCompleted}
+                  boardRef={boardRef}
+                  recentSnapCoord={recentSnapCoord}
+                  sizePx={boardSizePx}
+                />
+              </main>
+
+              <aside className="w-72 lg:w-80 xl:w-96 h-full flex flex-col justify-center shrink-0">
+                <PieceTray
+                  level={currentLevel}
+                  unplacedPieces={unplacedPieces}
+                  totalPiecesCount={jigsaw.pieces.length}
+                  cellWidth={jigsaw.cellWidth}
+                  cellHeight={jigsaw.cellHeight}
+                  boardWidth={jigsaw.boardWidth}
+                  boardHeight={jigsaw.boardHeight}
+                  draggingPieceId={draggingPiece ? draggingPiece.id : null}
+                  onPointerDownPiece={handlePointerDownPiece}
+                  onShuffleTray={handleShuffleTray}
+                  orientation="vertical"
+                  thumbSizePx={thumbSizePx}
+                />
+              </aside>
+            </div>
+
+            {/* Floating Drag Overlay */}
+            {draggingPiece && (
+              <DragOverlay
+                level={currentLevel}
+                piece={draggingPiece}
+                pos={dragPos}
+                boardRect={boardRef.current ? boardRef.current.getBoundingClientRect() : null}
+                cellWidth={jigsaw.cellWidth}
+                cellHeight={jigsaw.cellHeight}
+                boardWidth={jigsaw.boardWidth}
+                boardHeight={jigsaw.boardHeight}
+                isNearSnap={isNearSnap}
+                returnPos={returnPos}
+                isTouch={isTouchRef.current}
+              />
+            )}
+
+            {/* Pause Modal */}
+            {screen === 'PAUSED' && (
+              <PauseModal
+                level={currentLevel}
+                soundEnabled={saveState.soundEnabled}
+                onResume={() => setScreen('PLAYING')}
+                onRestart={() => startLevel(currentLevel)}
+                onLevelSelect={handleBackToLevels}
+                onSoundToggle={handleSoundToggle}
+              />
+            )}
+
+            {/* Victory Modal */}
+            {showVictoryModal && (
+              <VictoryModal
+                level={currentLevel}
+                starsEarned={hasUsedPreview ? 2 : 3}
+                hasNextLevel={currentLevel.id < activeLevels.length}
+                onNextLevel={handleNextLevel}
+                onReplay={handleReplay}
+                onLevelSelect={handleBackToLevels}
+              />
+            )}
+          </div>
+        ) : (
+          /* Portrait / Mobile Stacked Mode */
+          <div className="flex flex-col h-[100dvh] w-full max-w-xl mx-auto px-2 py-1 justify-between select-none overflow-hidden">
+            {/* Game Header */}
+            <GameHeader
               level={currentLevel}
-              starsEarned={hasUsedPreview ? 2 : 3}
-              hasNextLevel={currentLevel.id < activeLevels.length}
-              onNextLevel={handleNextLevel}
-              onReplay={handleReplay}
-              onLevelSelect={handleBackToLevels}
+              starsPotential={hasUsedPreview ? 2 : 3}
+              hasUsedPreview={hasUsedPreview}
+              isPreviewActive={isPreviewActive}
+              soundEnabled={saveState.soundEnabled}
+              isFullscreen={isFullscreen}
+              onPreviewClick={handlePreviewClick}
+              onPauseClick={() => setScreen('PAUSED')}
+              onSoundToggle={handleSoundToggle}
+              onBackToLevels={handleBackToLevels}
+              onToggleFullscreen={toggleFullscreen}
             />
-          )}
-        </div>
+
+            {/* Puzzle Board in Center */}
+            <main className="flex-1 my-auto flex items-center justify-center min-h-0">
+              <PuzzleBoard
+                level={currentLevel}
+                pieces={jigsaw.pieces}
+                fullPathGrid={jigsaw.fullPathGrid}
+                lockedPieceIds={lockedPieceIds}
+                activeSnapPieceId={isNearSnap && draggingPiece ? draggingPiece.id : null}
+                isPreviewActive={isPreviewActive}
+                isCompleted={isCompleted}
+                boardRef={boardRef}
+                recentSnapCoord={recentSnapCoord}
+                sizePx={boardSizePx}
+              />
+            </main>
+
+            {/* Available Pieces Tray at Bottom */}
+            <footer className="w-full mt-auto shrink-0 pb-1">
+              <PieceTray
+                level={currentLevel}
+                unplacedPieces={unplacedPieces}
+                totalPiecesCount={jigsaw.pieces.length}
+                cellWidth={jigsaw.cellWidth}
+                cellHeight={jigsaw.cellHeight}
+                boardWidth={jigsaw.boardWidth}
+                boardHeight={jigsaw.boardHeight}
+                draggingPieceId={draggingPiece ? draggingPiece.id : null}
+                onPointerDownPiece={handlePointerDownPiece}
+                onShuffleTray={handleShuffleTray}
+                orientation="horizontal"
+                thumbSizePx={thumbSizePx}
+              />
+            </footer>
+
+            {/* Floating Drag Overlay */}
+            {draggingPiece && (
+              <DragOverlay
+                level={currentLevel}
+                piece={draggingPiece}
+                pos={dragPos}
+                boardRect={boardRef.current ? boardRef.current.getBoundingClientRect() : null}
+                cellWidth={jigsaw.cellWidth}
+                cellHeight={jigsaw.cellHeight}
+                boardWidth={jigsaw.boardWidth}
+                boardHeight={jigsaw.boardHeight}
+                isNearSnap={isNearSnap}
+                returnPos={returnPos}
+                isTouch={isTouchRef.current}
+              />
+            )}
+
+            {/* Pause Modal */}
+            {screen === 'PAUSED' && (
+              <PauseModal
+                level={currentLevel}
+                soundEnabled={saveState.soundEnabled}
+                onResume={() => setScreen('PLAYING')}
+                onRestart={() => startLevel(currentLevel)}
+                onLevelSelect={handleBackToLevels}
+                onSoundToggle={handleSoundToggle}
+              />
+            )}
+
+            {/* Victory Modal */}
+            {showVictoryModal && (
+              <VictoryModal
+                level={currentLevel}
+                starsEarned={hasUsedPreview ? 2 : 3}
+                hasNextLevel={currentLevel.id < activeLevels.length}
+                onNextLevel={handleNextLevel}
+                onReplay={handleReplay}
+                onLevelSelect={handleBackToLevels}
+              />
+            )}
+          </div>
+        )
       )}
 
       {/* 4. THEME SELECT MODAL (Global) */}

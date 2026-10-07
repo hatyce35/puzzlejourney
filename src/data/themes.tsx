@@ -1,31 +1,51 @@
 import React from 'react';
 import { ThemeDefinition, LevelDefinition, ThemeId } from '../types/game';
 
-// Local verified image renderer with responsive SVG support
+// Resolves puzzle image URLs reliably across dev server, preview, and production hosts (Vercel)
+export const getPuzzleImageUrl = (filenameOrPath: string): string => {
+  if (!filenameOrPath) return "";
+  if (
+    filenameOrPath.startsWith("http://") ||
+    filenameOrPath.startsWith("https://") ||
+    filenameOrPath.startsWith("data:")
+  ) {
+    return filenameOrPath;
+  }
+  const cleanFilename = filenameOrPath.replace(/^\/?(src\/assets\/puzzles\/|puzzles\/)/, "");
+  const base = import.meta.env.BASE_URL || "/";
+  const prefix = base.endsWith("/") ? base : `${base}/`;
+  return `${prefix}puzzles/${cleanFilename}`;
+};
+
+// Local verified image renderer with responsive SVG support and multi-host asset resolution
 export const renderPuzzleImage = (
   imageUrl: string,
   key: string,
   gradFrom: string,
   gradTo: string
-) => (width: number, height: number) => (
-  <g>
-    <defs>
-      <linearGradient id={`grad-${key}`} x1="0%" y1="0%" x2="100%" y2="100%">
-        <stop offset="0%" stopColor={gradFrom} />
-        <stop offset="100%" stopColor={gradTo} />
-      </linearGradient>
-    </defs>
-    <rect width={width || 600} height={height || 600} fill={`url(#grad-${key})`} />
-    <image
-      href={imageUrl}
-      x="0"
-      y="0"
-      width={width || 600}
-      height={height || 600}
-      preserveAspectRatio="xMidYMid slice"
-    />
-  </g>
-);
+) => (width: number, height: number) => {
+  const resolvedUrl = getPuzzleImageUrl(imageUrl);
+  return (
+    <g>
+      <defs>
+        <linearGradient id={`grad-${key}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={gradFrom} />
+          <stop offset="100%" stopColor={gradTo} />
+        </linearGradient>
+      </defs>
+      <rect width={width || 600} height={height || 600} fill={`url(#grad-${key})`} />
+      <image
+        href={resolvedUrl}
+        xlinkHref={resolvedUrl}
+        x="0"
+        y="0"
+        width={width || 600}
+        height={height || 600}
+        preserveAspectRatio="xMidYMid slice"
+      />
+    </g>
+  );
+};
 
 export const AVAILABLE_THEMES: ThemeDefinition[] = [
   {
@@ -33,7 +53,7 @@ export const AVAILABLE_THEMES: ThemeDefinition[] = [
     name: 'Tarihi Şehirler & Mimari',
     tagline: 'Venedik, Kapadokya, Paris, Kyoto, Roma',
     description: 'Dünyanın en büyüleyici tarihi başkentleri, antik tapınakları ve mimari şaheserleri (20 Bölüm).',
-    coverImage: '/src/assets/puzzles/venice.jpg',
+    coverImage: '/puzzles/venice.jpg',
     icon: 'Landmark',
     accentGradient: 'from-amber-500 to-orange-600',
   },
@@ -42,7 +62,7 @@ export const AVAILABLE_THEMES: ThemeDefinition[] = [
     name: 'Doğa & Dünya Manzaraları',
     tagline: 'Alpler, Fiyortlar, Şelaleler, Göller',
     description: 'Buzul dağ gölleri, sisli fiyortlar, lavanta tarlaları ve kanyonlar (20 Bölüm).',
-    coverImage: '/src/assets/puzzles/nature_1.jpg',
+    coverImage: '/puzzles/nature_1.jpg',
     icon: 'Mountain',
     accentGradient: 'from-emerald-500 to-teal-700',
   },
@@ -51,7 +71,7 @@ export const AVAILABLE_THEMES: ThemeDefinition[] = [
     name: 'Mistik Gece & Samanyolu',
     tagline: 'Kutup Işıkları, Yıldızlar, Ay Işığı',
     description: 'Kuzey ışıkları (aurora borealis), samanyolu galaksileri ve gece manzaraları (20 Bölüm).',
-    coverImage: '/src/assets/puzzles/night_1.jpg',
+    coverImage: '/puzzles/night_1.jpg',
     icon: 'Moon',
     accentGradient: 'from-blue-600 via-indigo-600 to-fuchsia-700',
   },
@@ -68,8 +88,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 3,
     description: 'Zümrüt sularda süzülen gondollar ve tarihi Venedik Gotik sarayları.',
-    imageUrl: '/src/assets/puzzles/venice.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/venice.jpg', 'c1', '#0F766E', '#1E293B'),
+    imageUrl: '/puzzles/venice.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/venice.jpg', 'c1', '#0F766E', '#1E293B'),
   },
   {
     id: 2,
@@ -80,8 +100,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 3,
     description: 'Gündoğumunda peri bacaları ve vadiler üzerinde yükselen rengarenk balonlar.',
-    imageUrl: '/src/assets/puzzles/cappadocia.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/cappadocia.jpg', 'c2', '#C2410C', '#78350F'),
+    imageUrl: '/puzzles/cappadocia.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/cappadocia.jpg', 'c2', '#C2410C', '#78350F'),
   },
   {
     id: 3,
@@ -92,8 +112,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 4,
     description: 'Seine Nehri kıyısında akşam ışıklarıyla parıldayan Eyfel Kulesi ve taş köprüler.',
-    imageUrl: '/src/assets/puzzles/paris.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/paris.jpg', 'c3', '#1E1B4B', '#312E81'),
+    imageUrl: '/puzzles/paris.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/paris.jpg', 'c3', '#1E1B4B', '#312E81'),
   },
   {
     id: 4,
@@ -104,8 +124,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 4,
     description: 'Kızıl akçaağaçlar ve taş fenerli Zen yoluyla çevrili beş katlı ahşap pagoda.',
-    imageUrl: '/src/assets/puzzles/kyoto.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/kyoto.jpg', 'c4', '#991B1B', '#450A0A'),
+    imageUrl: '/puzzles/kyoto.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/kyoto.jpg', 'c4', '#991B1B', '#450A0A'),
   },
   {
     id: 5,
@@ -116,8 +136,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 4,
     description: 'İmparatorluk döneminin efsanevi taş amfitiyatrosu ve altın günbatımı kemerleri.',
-    imageUrl: '/src/assets/puzzles/rome.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/rome.jpg', 'c5', '#B45309', '#451A03'),
+    imageUrl: '/puzzles/rome.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/rome.jpg', 'c5', '#B45309', '#451A03'),
   },
   {
     id: 6,
@@ -128,8 +148,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: 'Ege Denizi kalderasına bakan bembeyaz evler, kobalt mavi kubbeler ve begonviller.',
-    imageUrl: '/src/assets/puzzles/santorini.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/santorini.jpg', 'c6', '#0284C7', '#F8FAFC'),
+    imageUrl: '/puzzles/santorini.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/santorini.jpg', 'c6', '#0284C7', '#F8FAFC'),
   },
   {
     id: 7,
@@ -140,8 +160,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: 'Akşam kızıllığında Boğaziçi dalgaları, tarihi yarımadanın kubbe siluetleri ve Kız Kulesi.',
-    imageUrl: '/src/assets/puzzles/istanbul.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/istanbul.jpg', 'c7', '#C2410C', '#0369A1'),
+    imageUrl: '/puzzles/istanbul.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/istanbul.jpg', 'c7', '#C2410C', '#0369A1'),
   },
   {
     id: 8,
@@ -152,8 +172,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: 'Vltava Nehri üzerinde barok heykelli taş köprü, Gotik kuleler ve kale manzarası.',
-    imageUrl: '/src/assets/puzzles/prague.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/prague.jpg', 'c8', '#334155', '#B45309'),
+    imageUrl: '/puzzles/prague.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/prague.jpg', 'c8', '#334155', '#B45309'),
   },
   {
     id: 9,
@@ -164,8 +184,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: 'Antoni Gaudí’nin doğadan ilham alan görkemli taş kuleleri ve gökyüzüne uzanan organik mimari.',
-    imageUrl: '/src/assets/puzzles/barcelona.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/barcelona.jpg', 'c9', '#78350F', '#1E293B'),
+    imageUrl: '/puzzles/barcelona.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/barcelona.jpg', 'c9', '#78350F', '#1E293B'),
   },
   {
     id: 10,
@@ -176,8 +196,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: 'Rönesans’ın doğduğu şehirde Brunelleschi kubbesi, kiremitli çatılar ve Toskana tepeleri.',
-    imageUrl: '/src/assets/puzzles/florence.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/florence.jpg', 'c10', '#EA580C', '#475569'),
+    imageUrl: '/puzzles/florence.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/florence.jpg', 'c10', '#EA580C', '#475569'),
   },
   {
     id: 11,
@@ -188,8 +208,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Şafak vaktinde havuzdaki kusursuz yansımasıyla parıldayan beyaz mermer kubbeler.',
-    imageUrl: '/src/assets/puzzles/tajmahal.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/tajmahal.jpg', 'c11', '#F8FAFC', '#0E7490'),
+    imageUrl: '/puzzles/tajmahal.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/tajmahal.jpg', 'c11', '#F8FAFC', '#0E7490'),
   },
   {
     id: 12,
@@ -200,8 +220,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Kırmızı kanyon kayalıklarının kalbine oyulmuş 2000 yıllık görkemli El-Hazne tapınağı.',
-    imageUrl: '/src/assets/puzzles/petra.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/petra.jpg', 'c12', '#BE123C', '#78350F'),
+    imageUrl: '/puzzles/petra.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/petra.jpg', 'c12', '#BE123C', '#78350F'),
   },
   {
     id: 13,
@@ -212,8 +232,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Karlı Fuji Yanardağı zirvesi, baharda pembe sakura kiraz çiçekleri ve kırmızı pagoda.',
-    imageUrl: '/src/assets/puzzles/fuji.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/fuji.jpg', 'c13', '#DC2626', '#38BDF8'),
+    imageUrl: '/puzzles/fuji.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/fuji.jpg', 'c13', '#DC2626', '#38BDF8'),
   },
   {
     id: 14,
@@ -224,8 +244,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Turkuaz çinili dev medreseler, yivli mavi kubbeler ve İpek Yolu’nun efsanevi İslam mimarisi.',
-    imageUrl: '/src/assets/puzzles/samarkand.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/samarkand.jpg', 'c14', '#0284C7', '#D97706'),
+    imageUrl: '/puzzles/samarkand.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/samarkand.jpg', 'c14', '#0284C7', '#D97706'),
   },
   {
     id: 15,
@@ -236,8 +256,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Lotus göletine yansıyan devasa taş kuleler, asırlık banyan ağaçları ve Khmer tapınakları.',
-    imageUrl: '/src/assets/puzzles/angkor.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/angkor.jpg', 'c15', '#D97706', '#15803D'),
+    imageUrl: '/puzzles/angkor.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/angkor.jpg', 'c15', '#D97706', '#15803D'),
   },
   {
     id: 16,
@@ -248,8 +268,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'Sisli Alp dağları ve çam ormanlarının yamacında bir masal tablosu gibi yükselen kuleler.',
-    imageUrl: '/src/assets/puzzles/neuschwanstein.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/neuschwanstein.jpg', 'c16', '#14532D', '#475569'),
+    imageUrl: '/puzzles/neuschwanstein.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/neuschwanstein.jpg', 'c16', '#14532D', '#475569'),
   },
   {
     id: 17,
@@ -260,8 +280,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'Okyanus gelgitleri arasında yükselen Gotik taş manastır ve akşam suları.',
-    imageUrl: '/src/assets/puzzles/montsaintmichel.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/montsaintmichel.jpg', 'c17', '#334155', '#CA8A04'),
+    imageUrl: '/puzzles/montsaintmichel.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/montsaintmichel.jpg', 'c17', '#334155', '#CA8A04'),
   },
   {
     id: 18,
@@ -272,8 +292,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'Binlerce yıllık Keops Piramidi, batan çöl güneşinin altın kızıllığında devasa taş siluetler.',
-    imageUrl: '/src/assets/puzzles/pyramids.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/pyramids.jpg', 'c18', '#EA580C', '#78350F'),
+    imageUrl: '/puzzles/pyramids.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/pyramids.jpg', 'c18', '#EA580C', '#78350F'),
   },
   {
     id: 19,
@@ -284,8 +304,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'Turkuaz Adriyatik suları kenarında yükselen asırlık taş surlar ve kızıl kiremitli şehir.',
-    imageUrl: '/src/assets/puzzles/dubrovnik.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/dubrovnik.jpg', 'c19', '#0284C7', '#EA580C'),
+    imageUrl: '/puzzles/dubrovnik.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/dubrovnik.jpg', 'c19', '#0284C7', '#EA580C'),
   },
   {
     id: 20,
@@ -296,8 +316,8 @@ const CITIES_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'And Dağları’nın sisli bulutları arasında yükselen Huayna Picchu zirvesi ve teraslı antik İnka kenti.',
-    imageUrl: '/src/assets/puzzles/machupicchu.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/machupicchu.jpg', 'c20', '#16A34A', '#1E293B'),
+    imageUrl: '/puzzles/machupicchu.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/machupicchu.jpg', 'c20', '#16A34A', '#1E293B'),
   },
 ];
 
@@ -312,8 +332,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 3,
     description: 'Kristal berraklığındaki dağ gölüne yansıyan piramidal karlı Matterhorn zirvesi.',
-    imageUrl: '/src/assets/puzzles/nature_1.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_1.jpg', 'n1', '#0284C7', '#E2E8F0'),
+    imageUrl: '/puzzles/nature_1.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_1.jpg', 'n1', '#0284C7', '#E2E8F0'),
   },
   {
     id: 2,
@@ -324,8 +344,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 3,
     description: 'Yüksek zümrüt yamaçlar arasından dökülen şelaleler ve derin fiyort suları.',
-    imageUrl: '/src/assets/puzzles/nature_2.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_2.jpg', 'n2', '#065F46', '#0284C7'),
+    imageUrl: '/puzzles/nature_2.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_2.jpg', 'n2', '#065F46', '#0284C7'),
   },
   {
     id: 3,
@@ -336,8 +356,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 4,
     description: 'Günbatımında ufka doğru uzanan mis kokulu mor lavanta sıraları.',
-    imageUrl: '/src/assets/puzzles/nature_3.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_3.jpg', 'n3', '#7C3AED', '#F59E0B'),
+    imageUrl: '/puzzles/nature_3.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_3.jpg', 'n3', '#7C3AED', '#F59E0B'),
   },
   {
     id: 4,
@@ -348,8 +368,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 4,
     description: 'On Zirveler Vadisi ile çevrili parıldayan turkuaz buzul gölü.',
-    imageUrl: '/src/assets/puzzles/nature_4.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_4.jpg', 'n4', '#06B6D4', '#1E293B'),
+    imageUrl: '/puzzles/nature_4.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_4.jpg', 'n4', '#06B6D4', '#1E293B'),
   },
   {
     id: 5,
@@ -360,8 +380,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 4,
     description: 'Tropik yağmur ormanlarının içinden gürüldeyerek dökülen devasa su perdesi.',
-    imageUrl: '/src/assets/puzzles/nature_5.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_5.jpg', 'n5', '#047857', '#38BDF8'),
+    imageUrl: '/puzzles/nature_5.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_5.jpg', 'n5', '#047857', '#38BDF8'),
   },
   {
     id: 6,
@@ -372,8 +392,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: 'Milyonlarca yıllık kızıl kaya katmanları ve kıvrılarak akan Colorado Nehri.',
-    imageUrl: '/src/assets/puzzles/nature_6.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_6.jpg', 'n6', '#C2410C', '#78350F'),
+    imageUrl: '/puzzles/nature_6.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_6.jpg', 'n6', '#C2410C', '#78350F'),
   },
   {
     id: 7,
@@ -384,8 +404,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: 'Turkuaz okyanus suları, bembeyaz kumsal adacıkları ve palmiye gölgeleri.',
-    imageUrl: '/src/assets/puzzles/nature_7.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_7.jpg', 'n7', '#0284C7', '#FEF08A'),
+    imageUrl: '/puzzles/nature_7.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_7.jpg', 'n7', '#0284C7', '#FEF08A'),
   },
   {
     id: 8,
@@ -396,8 +416,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: 'Çiçekli yemyeşil alp yaylaları ve arkasında göğe yükselen dik testere kayalıklar.',
-    imageUrl: '/src/assets/puzzles/nature_8.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_8.jpg', 'n8', '#16A34A', '#475569'),
+    imageUrl: '/puzzles/nature_8.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_8.jpg', 'n8', '#16A34A', '#475569'),
   },
   {
     id: 9,
@@ -408,8 +428,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: 'Birbirine basamaklar halinde bağlanan 16 zümrüt göl ve ahşap yürüyüş yolları.',
-    imageUrl: '/src/assets/puzzles/nature_9.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_9.jpg', 'n9', '#059669', '#0284C7'),
+    imageUrl: '/puzzles/nature_9.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_9.jpg', 'n9', '#059669', '#0284C7'),
   },
   {
     id: 10,
@@ -420,8 +440,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: '60 metre yüksekten dökülen dev şelale, siyah volkanik kumlar ve çift gökkuşağı.',
-    imageUrl: '/src/assets/puzzles/nature_10.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_10.jpg', 'n10', '#15803D', '#38BDF8'),
+    imageUrl: '/puzzles/nature_10.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_10.jpg', 'n10', '#15803D', '#38BDF8'),
   },
   {
     id: 11,
@@ -432,8 +452,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Afrika savanasında batan dev turuncu güneş altında şemsiye akasya silueti.',
-    imageUrl: '/src/assets/puzzles/nature_11.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_11.jpg', 'n11', '#EA580C', '#78350F'),
+    imageUrl: '/puzzles/nature_11.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_11.jpg', 'n11', '#EA580C', '#78350F'),
   },
   {
     id: 12,
@@ -444,8 +464,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Bulut denizinin içinden göğe fırlayan 3000 adet ince uzun kuvarsit kumtaşı zirvesi.',
-    imageUrl: '/src/assets/puzzles/nature_12.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_12.jpg', 'n12', '#475569', '#15803D'),
+    imageUrl: '/puzzles/nature_12.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_12.jpg', 'n12', '#475569', '#15803D'),
   },
   {
     id: 13,
@@ -456,8 +476,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Kar gibi beyaz kalsiyum havuzları ve içindeki turkuaz termal şifalı sular.',
-    imageUrl: '/src/assets/puzzles/nature_13.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_13.jpg', 'n13', '#38BDF8', '#F8FAFC'),
+    imageUrl: '/puzzles/nature_13.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_13.jpg', 'n13', '#38BDF8', '#F8FAFC'),
   },
   {
     id: 14,
@@ -468,8 +488,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Mitre Peak dağının gölgesi altında sisli yağmur ormanları ve fiyort suları.',
-    imageUrl: '/src/assets/puzzles/nature_14.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_14.jpg', 'n14', '#065F46', '#1E293B'),
+    imageUrl: '/puzzles/nature_14.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_14.jpg', 'n14', '#065F46', '#1E293B'),
   },
   {
     id: 15,
@@ -480,8 +500,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Rüzgarın şekillendirdiği dalgalı kızıl kum tepeleri ve altın günbatımı ışığı.',
-    imageUrl: '/src/assets/puzzles/nature_15.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_15.jpg', 'n15', '#EA580C', '#78350F'),
+    imageUrl: '/puzzles/nature_15.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_15.jpg', 'n15', '#EA580C', '#78350F'),
   },
   {
     id: 16,
@@ -492,8 +512,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'Monolitik granit kaya devleri, çam vadisi ve baharda coşan Yosemite şelalesi.',
-    imageUrl: '/src/assets/puzzles/nature_16.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_16.jpg', 'n16', '#15803D', '#64748B'),
+    imageUrl: '/puzzles/nature_16.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_16.jpg', 'n16', '#15803D', '#64748B'),
   },
   {
     id: 17,
@@ -504,8 +524,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'Ağaç dalları arasından süzülen altın güneş huzmeleri ve yosun kaplı orman tabanı.',
-    imageUrl: '/src/assets/puzzles/nature_17.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_17.jpg', 'n17', '#15803D', '#FDE047'),
+    imageUrl: '/puzzles/nature_17.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_17.jpg', 'n17', '#15803D', '#FDE047'),
   },
   {
     id: 18,
@@ -516,8 +536,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'Geniş çiçekli alp çayırları ve arkasında göğe yükselen karlı görkemli zirveler.',
-    imageUrl: '/src/assets/puzzles/nature_18.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_18.jpg', 'n18', '#16A34A', '#0284C7'),
+    imageUrl: '/puzzles/nature_18.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_18.jpg', 'n18', '#16A34A', '#0284C7'),
   },
   {
     id: 19,
@@ -528,8 +548,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'Sabah sisinin kapladığı göl suları, sarı sazlıklar ve sessiz dağ siluetleri.',
-    imageUrl: '/src/assets/puzzles/nature_19.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_19.jpg', 'n19', '#334155', '#D97706'),
+    imageUrl: '/puzzles/nature_19.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_19.jpg', 'n19', '#334155', '#D97706'),
   },
   {
     id: 20,
@@ -540,8 +560,8 @@ const NATURE_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'Çay tarlaları ve kiraz çiçekleriyle çerçevelenmiş karlı kutsal Fuji Dağı tablosu.',
-    imageUrl: '/src/assets/puzzles/nature_20.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/nature_20.jpg', 'n20', '#EC4899', '#38BDF8'),
+    imageUrl: '/puzzles/nature_20.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/nature_20.jpg', 'n20', '#EC4899', '#38BDF8'),
   },
 ];
 
@@ -556,8 +576,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 3,
     description: 'Karlı fiyortlar üzerinde zümrüt yeşili perdeler gibi dans eden büyüleyici Aurora Borealis.',
-    imageUrl: '/src/assets/puzzles/night_1.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_1.jpg', 'm1', '#10B981', '#064E3B'),
+    imageUrl: '/puzzles/night_1.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_1.jpg', 'm1', '#10B981', '#064E3B'),
   },
   {
     id: 2,
@@ -568,8 +588,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 3,
     description: 'Dünyanın en berrak gökyüzünde ışıldayan milyonlarca yıldız ve mor Samanyolu kemeri.',
-    imageUrl: '/src/assets/puzzles/night_2.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_2.jpg', 'm2', '#4C1D95', '#0F172A'),
+    imageUrl: '/puzzles/night_2.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_2.jpg', 'm2', '#4C1D95', '#0F172A'),
   },
   {
     id: 3,
@@ -580,8 +600,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 4,
     description: 'Karlı sivri dağ zirvesinin üzerinde parlayan milyarlarca yıldız ve gökada merkezi.',
-    imageUrl: '/src/assets/puzzles/night_3.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_3.jpg', 'm3', '#6366F1', '#0F172A'),
+    imageUrl: '/puzzles/night_3.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_3.jpg', 'm3', '#6366F1', '#0F172A'),
   },
   {
     id: 4,
@@ -592,8 +612,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 4,
     description: 'Sessiz gece denizine vuran yıldız ışıkları ve ufuktaki lacivert sonsuzluk.',
-    imageUrl: '/src/assets/puzzles/night_4.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_4.jpg', 'm4', '#1E3A8A', '#0284C7'),
+    imageUrl: '/puzzles/night_4.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_4.jpg', 'm4', '#1E3A8A', '#0284C7'),
   },
   {
     id: 5,
@@ -604,8 +624,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 3,
     cols: 4,
     description: 'Buz parçalarının yüzdüğü göle yansıyan yeşil ve eflatun aurora ışık dalgaları.',
-    imageUrl: '/src/assets/puzzles/night_5.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_5.jpg', 'm5', '#10B981', '#1E1B4B'),
+    imageUrl: '/puzzles/night_5.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_5.jpg', 'm5', '#10B981', '#1E1B4B'),
   },
   {
     id: 6,
@@ -616,8 +636,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: 'Gökadalar arası gaz ve toz bulutlarının yarattığı mor ve pembe kozmik renk şöleni.',
-    imageUrl: '/src/assets/puzzles/night_6.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_6.jpg', 'm6', '#C084FC', '#311B92'),
+    imageUrl: '/puzzles/night_6.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_6.jpg', 'm6', '#C084FC', '#311B92'),
   },
   {
     id: 7,
@@ -628,8 +648,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: 'Yıldız kümelerinin arasından geçen karanlık ve parlak göksel yıldız nehirleri.',
-    imageUrl: '/src/assets/puzzles/night_7.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_7.jpg', 'm7', '#FDE047', '#0F172A'),
+    imageUrl: '/puzzles/night_7.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_7.jpg', 'm7', '#FDE047', '#0F172A'),
   },
   {
     id: 8,
@@ -640,8 +660,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: 'Uzaydan görünen gece kıtaları, altın şehir ağları ve ince atmosfer perdesi.',
-    imageUrl: '/src/assets/puzzles/night_8.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_8.jpg', 'm8', '#0284C7', '#0F172A'),
+    imageUrl: '/puzzles/night_8.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_8.jpg', 'm8', '#0284C7', '#0F172A'),
   },
   {
     id: 9,
@@ -652,8 +672,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: 'Kristal berraklığındaki gecede gökyüzünü süsleyen elmas gibi parıldayan yıldızlar.',
-    imageUrl: '/src/assets/puzzles/night_9.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_9.jpg', 'm9', '#6366F1', '#1E1B4B'),
+    imageUrl: '/puzzles/night_9.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_9.jpg', 'm9', '#6366F1', '#1E1B4B'),
   },
   {
     id: 10,
@@ -664,8 +684,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 4,
     cols: 4,
     description: 'Karanlık kum dalgalarının hemen üzerinden kıvrılarak yükselen parlak Samanyolu.',
-    imageUrl: '/src/assets/puzzles/night_10.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_10.jpg', 'm10', '#D97706', '#0F172A'),
+    imageUrl: '/puzzles/night_10.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_10.jpg', 'm10', '#D97706', '#0F172A'),
   },
   {
     id: 11,
@@ -676,8 +696,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Karlı dağ yamaçları üzerinde pırıl pırıl parıldayan samanyolu kuşağı.',
-    imageUrl: '/src/assets/puzzles/night_11.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_11.jpg', 'm11', '#4F46E5', '#E0E7FF'),
+    imageUrl: '/puzzles/night_11.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_11.jpg', 'm11', '#4F46E5', '#E0E7FF'),
   },
   {
     id: 12,
@@ -688,8 +708,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Sıcak sarı pencere ışıklarıyla parlayan ahşap kulübe ve gökte dalgalanan yeşil ışıklar.',
-    imageUrl: '/src/assets/puzzles/night_12.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_12.jpg', 'm12', '#10B981', '#1E293B'),
+    imageUrl: '/puzzles/night_12.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_12.jpg', 'm12', '#10B981', '#1E293B'),
   },
   {
     id: 13,
@@ -700,8 +720,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Islak kum tabakasının aynasında parlayan gökyüzü ve sessiz okyanus dalgası.',
-    imageUrl: '/src/assets/puzzles/night_13.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_13.jpg', 'm13', '#06B6D4', '#0F172A'),
+    imageUrl: '/puzzles/night_13.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_13.jpg', 'm13', '#06B6D4', '#0F172A'),
   },
   {
     id: 14,
@@ -712,8 +732,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Volkanik dağın eteklerindeki göle dökülen yeşil aurora dalgaları.',
-    imageUrl: '/src/assets/puzzles/night_14.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_14.jpg', 'm14', '#10B981', '#064E3B'),
+    imageUrl: '/puzzles/night_14.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_14.jpg', 'm14', '#10B981', '#064E3B'),
   },
   {
     id: 15,
@@ -724,8 +744,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 5,
     cols: 5,
     description: 'Yeni yıldızların doğduğu parıltılı mor ve mavi yıldızlararası bulutsu.',
-    imageUrl: '/src/assets/puzzles/night_15.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_15.jpg', 'm15', '#A855F7', '#311B92'),
+    imageUrl: '/puzzles/night_15.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_15.jpg', 'm15', '#A855F7', '#311B92'),
   },
   {
     id: 16,
@@ -736,8 +756,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'Sonsuz uzay boşluğunda ışıldayan sayısız renkli yıldız ve kozmik toz yolları.',
-    imageUrl: '/src/assets/puzzles/night_16.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_16.jpg', 'm16', '#38BDF8', '#0F172A'),
+    imageUrl: '/puzzles/night_16.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_16.jpg', 'm16', '#38BDF8', '#0F172A'),
   },
   {
     id: 17,
@@ -748,8 +768,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'Ufuktan ufka devasa bir gökkuşağı gibi kıvrılan Samanyolu galaksi kemeri.',
-    imageUrl: '/src/assets/puzzles/night_17.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_17.jpg', 'm17', '#FDE047', '#1E1B4B'),
+    imageUrl: '/puzzles/night_17.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_17.jpg', 'm17', '#FDE047', '#1E1B4B'),
   },
   {
     id: 18,
@@ -760,8 +780,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'Bütün gökyüzünü kaplayan hareketli yeşil kutup ışıkları ve karlı dağ siluetleri.',
-    imageUrl: '/src/assets/puzzles/night_18.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_18.jpg', 'm18', '#10B981', '#064E3B'),
+    imageUrl: '/puzzles/night_18.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_18.jpg', 'm18', '#10B981', '#064E3B'),
   },
   {
     id: 19,
@@ -772,8 +792,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'Kızıl çöl kayalıklarının üzerinden yükselen devasa mor galaksi diski.',
-    imageUrl: '/src/assets/puzzles/night_19.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_19.jpg', 'm19', '#7C3AED', '#0F172A'),
+    imageUrl: '/puzzles/night_19.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_19.jpg', 'm19', '#7C3AED', '#0F172A'),
   },
   {
     id: 20,
@@ -784,8 +804,8 @@ const NIGHT_LEVELS: LevelDefinition[] = [
     rows: 6,
     cols: 6,
     description: 'Uçtan uca karlı dağlar ve üzerinde kristal gibi parıldayan kozmik gece manzarası.',
-    imageUrl: '/src/assets/puzzles/night_20.jpg',
-    renderIllustration: renderPuzzleImage('/src/assets/puzzles/night_20.jpg', 'm20', '#6366F1', '#0F172A'),
+    imageUrl: '/puzzles/night_20.jpg',
+    renderIllustration: renderPuzzleImage('/puzzles/night_20.jpg', 'm20', '#6366F1', '#0F172A'),
   },
 ];
 

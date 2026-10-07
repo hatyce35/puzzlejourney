@@ -1,5 +1,5 @@
 import React from 'react';
-import { Play, Grid, Volume2, VolumeX, Sparkles, Star, Palette, ChevronRight } from 'lucide-react';
+import { Play, Grid, Volume2, VolumeX, Sparkles, Star, Palette, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
 import { GameSaveState, LevelDefinition, ThemeId } from '../types/game';
 import { AVAILABLE_THEMES } from '../data/themes';
 
@@ -7,20 +7,24 @@ interface MainMenuProps {
   saveState: GameSaveState;
   currentTheme: ThemeId;
   levels: LevelDefinition[];
+  isFullscreen?: boolean;
   onPlayCurrentLevel: () => void;
   onOpenLevelSelect: () => void;
   onOpenThemeSelect: () => void;
   onSoundToggle: () => void;
+  onToggleFullscreen?: () => void;
 }
 
 export const MainMenu: React.FC<MainMenuProps> = ({
   saveState,
   currentTheme,
   levels,
+  isFullscreen = false,
   onPlayCurrentLevel,
   onOpenLevelSelect,
   onOpenThemeSelect,
   onSoundToggle,
+  onToggleFullscreen,
 }) => {
   const themeData = saveState.themeProgress[currentTheme] || { unlockedLevel: 1, progress: {} };
   const currentLevelId = Math.min(20, Math.max(1, themeData.unlockedLevel));
@@ -34,8 +38,8 @@ export const MainMenu: React.FC<MainMenuProps> = ({
   const activeThemeMeta = AVAILABLE_THEMES.find((t) => t.id === currentTheme) || AVAILABLE_THEMES[0];
 
   return (
-    <div className="w-full max-w-sm mx-auto flex flex-col items-center justify-between min-h-full py-4 px-4 select-none text-center">
-      {/* Top Bar: Theme Badge & Sound toggle */}
+    <div className="w-full max-w-sm sm:max-w-md md:max-w-lg mx-auto flex flex-col items-center justify-between min-h-full py-3 sm:py-5 px-4 select-none text-center">
+      {/* Top Bar: Theme Badge, Fullscreen & Sound toggle */}
       <div className="w-full flex items-center justify-between">
         {/* Quick Theme Selector Button */}
         <button
@@ -44,23 +48,41 @@ export const MainMenu: React.FC<MainMenuProps> = ({
           className="flex items-center gap-1.5 px-3 py-1.5 rounded-2xl bg-amber-50 dark:bg-slate-800/90 border border-amber-300 dark:border-slate-700 text-xs font-bold text-slate-800 dark:text-slate-100 shadow-xs hover:border-amber-400 active:scale-95 transition-all"
         >
           <Palette className="w-3.5 h-3.5 text-amber-500" />
-          <span className="truncate max-w-[140px]">{activeThemeMeta.name}</span>
+          <span className="truncate max-w-[130px] sm:max-w-[160px]">{activeThemeMeta.name}</span>
           <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
         </button>
 
-        {/* Sound Toggle */}
-        <button
-          type="button"
-          onClick={onSoundToggle}
-          className="p-2 rounded-2xl bg-white/80 dark:bg-slate-800/80 shadow-xs border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-200 active:scale-95 transition-transform"
-          title={saveState.soundEnabled ? 'Sesi Kapat' : 'Sesi Aç'}
-        >
-          {saveState.soundEnabled ? (
-            <Volume2 className="w-4 h-4 text-emerald-500" />
-          ) : (
-            <VolumeX className="w-4 h-4 text-slate-400" />
+        {/* Action Controls */}
+        <div className="flex items-center gap-1.5">
+          {onToggleFullscreen && (
+            <button
+              type="button"
+              onClick={onToggleFullscreen}
+              className={`p-2 rounded-2xl shadow-xs border transition-transform active:scale-95 ${
+                isFullscreen
+                  ? 'bg-amber-100 dark:bg-amber-950/70 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300'
+                  : 'bg-white/80 dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-200'
+              }`}
+              title={isFullscreen ? 'Tam Ekrandan Çık' : 'Tam Ekran Oyna'}
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
           )}
-        </button>
+
+          {/* Sound Toggle */}
+          <button
+            type="button"
+            onClick={onSoundToggle}
+            className="p-2 rounded-2xl bg-white/80 dark:bg-slate-800/80 shadow-xs border border-slate-200/80 dark:border-slate-700 text-slate-700 dark:text-slate-200 active:scale-95 transition-transform"
+            title={saveState.soundEnabled ? 'Sesi Kapat' : 'Sesi Aç'}
+          >
+            {saveState.soundEnabled ? (
+              <Volume2 className="w-4 h-4 text-emerald-500" />
+            ) : (
+              <VolumeX className="w-4 h-4 text-slate-400" />
+            )}
+          </button>
+        </div>
       </div>
 
       {/* Hero Branding */}

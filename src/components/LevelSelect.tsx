@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Lock, Star, ArrowLeft, Volume2, VolumeX, Palette } from 'lucide-react';
+import { Lock, Star, ArrowLeft, Volume2, VolumeX, Palette, Maximize2, Minimize2 } from 'lucide-react';
 import { GameSaveState, LevelDefinition, ThemeId } from '../types/game';
 import { AVAILABLE_THEMES } from '../data/themes';
 
@@ -7,20 +7,24 @@ interface LevelSelectProps {
   saveState: GameSaveState;
   currentTheme: ThemeId;
   levels: LevelDefinition[];
+  isFullscreen?: boolean;
   onSelectLevel: (level: LevelDefinition) => void;
   onBackToMenu: () => void;
   onOpenThemeSelect: () => void;
   onSoundToggle: () => void;
+  onToggleFullscreen?: () => void;
 }
 
 export const LevelSelect: React.FC<LevelSelectProps> = ({
   saveState,
   currentTheme,
   levels,
+  isFullscreen = false,
   onSelectLevel,
   onBackToMenu,
   onOpenThemeSelect,
   onSoundToggle,
+  onToggleFullscreen,
 }) => {
   const themeData = saveState.themeProgress[currentTheme] || { unlockedLevel: 1, progress: {} };
   const activeThemeMeta = AVAILABLE_THEMES.find((t) => t.id === currentTheme) || AVAILABLE_THEMES[0];
@@ -42,7 +46,7 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
   const completedCount = Object.values(themeData.progress).filter((p) => p.completed).length;
 
   return (
-    <div className="w-full max-w-md mx-auto flex flex-col h-full select-none px-3 py-2 pb-6">
+    <div className="w-full max-w-6xl mx-auto flex flex-col h-full select-none px-3 sm:px-6 py-2 pb-6">
       {/* Top Bar */}
       <header className="flex items-center justify-between py-2 border-b border-slate-200/80 dark:border-slate-800">
         <button
@@ -71,18 +75,35 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={onSoundToggle}
-          className="p-2 rounded-xl bg-slate-200/80 hover:bg-slate-300/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors active:scale-95"
-          title={saveState.soundEnabled ? 'Sesi Kapat' : 'Sesi Aç'}
-        >
-          {saveState.soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
-        </button>
+        <div className="flex items-center gap-1.5">
+          {onToggleFullscreen && (
+            <button
+              type="button"
+              onClick={onToggleFullscreen}
+              className={`p-2 rounded-xl transition-colors active:scale-95 ${
+                isFullscreen
+                  ? 'bg-amber-100 dark:bg-amber-950/70 border border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300'
+                  : 'bg-slate-200/80 hover:bg-slate-300/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200'
+              }`}
+              title={isFullscreen ? 'Tam Ekrandan Çık' : 'Tam Ekran Yap'}
+            >
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+            </button>
+          )}
+
+          <button
+            type="button"
+            onClick={onSoundToggle}
+            className="p-2 rounded-xl bg-slate-200/80 hover:bg-slate-300/80 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors active:scale-95"
+            title={saveState.soundEnabled ? 'Sesi Kapat' : 'Sesi Aç'}
+          >
+            {saveState.soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
+          </button>
+        </div>
       </header>
 
       {/* Category Tabs */}
-      <nav aria-label="Level categories" className="flex items-center gap-1 py-2.5 overflow-x-auto no-scrollbar">
+      <nav aria-label="Level categories" className="flex items-center gap-1.5 py-2.5 overflow-x-auto no-scrollbar">
         {categories.map((cat) => {
           const isActive = selectedCategory === cat;
           return (
@@ -102,8 +123,8 @@ export const LevelSelect: React.FC<LevelSelectProps> = ({
         })}
       </nav>
 
-      {/* Level Cards Grid */}
-      <div className="grid grid-cols-2 gap-3 overflow-y-auto pt-1 pb-4 flex-1">
+      {/* Level Cards Grid - Responsive columns for mobile (2), tablet (3-4), desktop (5-6) */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4 overflow-y-auto pt-1 pb-4 flex-1">
         {filteredLevels.map((lvl) => {
           const isUnlocked = lvl.id <= themeData.unlockedLevel;
           const prog = themeData.progress[lvl.id];
