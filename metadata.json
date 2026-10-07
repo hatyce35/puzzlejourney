@@ -1,0 +1,6 @@
+{
+  "name": "Puzzle Journey - Mobile Jigsaw Puzzle",
+  "description": "A delightful and satisfying mobile jigsaw puzzle game. Drag and snap puzzle pieces into place to complete 20 colorful, charming levels.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
